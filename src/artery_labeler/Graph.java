@@ -95,7 +95,7 @@ public class Graph extends Figure {
 				}
 			}
 			t = 1250;
-			final Sample beSample = new Sample(625, 0);
+			final Sample beSample = new Sample(625, max);
 			trace1Provider.addSample(beSample);
 			final Sample beSample1 = new Sample(627, max);
 			trace1Provider.addSample(beSample1);
@@ -113,11 +113,11 @@ public class Graph extends Figure {
 			trace2Provider.setCurrentYDataTimestamp(rs.getInt(1));
 			
 			Double max = trace2Provider.getYDataMinMax().getUpper();
-			final Sample beSample = new Sample(rs.getInt(1)-625, 0);
+			final Sample beSample = new Sample(rs.getInt(1)-625, max);
 			trace1Provider.addSample(beSample);
 			final Sample beSample1 = new Sample(rs.getInt(1)-623, max);
 			trace1Provider.addSample(beSample1);
-			System.out.println(rs.getRow());
+			
 	}
 	
 	public static void advance10(ResultSet rs) throws SQLException {
@@ -129,11 +129,11 @@ public class Graph extends Figure {
 			trace2Provider.setCurrentYDataTimestamp(rs.getInt(1));
 		}
 			Double max = trace2Provider.getYDataMinMax().getUpper();
-			final Sample beSample = new Sample(rs.getInt(1)-625, 0);
+			final Sample beSample = new Sample(rs.getInt(1)-625, max);
 			trace1Provider.addSample(beSample);
 			final Sample beSample1 = new Sample(rs.getInt(1)-623, max);
 			trace1Provider.addSample(beSample1);
-			System.out.println(rs.getRow());
+			
 	}
 		
 		public static void retreat(ResultSet rs, int w) throws SQLException {
@@ -151,12 +151,11 @@ public class Graph extends Figure {
 					}
 				}
 				
-				final Sample beSample = new Sample(rs.getInt(1)-625, 0);
+				final Sample beSample = new Sample(rs.getInt(1)-625, max);
 				trace1Provider.addSample(beSample);
 				final Sample beSample1 = new Sample(rs.getInt(1)-623, max);
 				trace1Provider.addSample(beSample1);
 				
-				System.out.println(rs.getRow());
 			}catch(Exception e){
 				e.printStackTrace();
 			}
@@ -182,7 +181,6 @@ public class Graph extends Figure {
 			final Sample beSample1 = new Sample(rs.getInt(1)-623, max);
 			trace1Provider.addSample(beSample1);
 			
-			System.out.println(rs.getRow());
 		}catch(Exception e){
 			e.printStackTrace();
 		}

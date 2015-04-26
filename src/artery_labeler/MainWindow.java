@@ -1,5 +1,6 @@
 package artery_labeler;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -34,6 +35,10 @@ public class MainWindow {
 	private static String dropURL = "jdbc:derby:memory:" + dbName + ";drop=true";
 	public static Database db;
 	static Canvas graphCanvas;
+	int startInterval;
+	int endInterval = 0;
+	Boolean inInterval = false;
+	String intervalType;
 
 	/**
 	 * Launch the application.
@@ -73,7 +78,7 @@ public class MainWindow {
 	protected void createContents() throws SQLException {
 		db = new Database(connURL);
 		
-		Statement st = Database.conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
+		Statement st = Database.conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
 		ResultSet res = st.executeQuery("SELECT * FROM ABP_ID");
 		
 		display = Display.getDefault();
@@ -88,9 +93,141 @@ public class MainWindow {
 		{	
 			public void keyPressed(KeyEvent e)
 			{
+				
+				if(e.keyCode == 's'){
+					intervalType = "systole";
+					System.out.println(intervalType);
+				}
+				
+				if(e.keyCode == 'd'){
+					intervalType = "diastole";
+					System.out.println(intervalType);
+				}
+				/*
+				if(e.keyCode == SWT.CR){
+					try {
+						if(intervalType == "systole" || intervalType == "diastole"){}
+						else{throw new Exception();}
+						if(inInterval == true){
+							endInterval = res.getRow()-625;
+							System.out.println("end: "+endInterval);
+							int intervalLength = endInterval - startInterval;
+							int count = 0;
+							if(intervalType == "systole"){
+								//Statement st = Database.conn.createStatement();
+								for(int i=0; i<intervalLength; i++){
+									int id = startInterval + i;
+									int c = st.executeUpdate("UPDATE ABP_ID SET CLASS=1 WHERE ID="+ id);
+									count = count + c;
+									//System.out.println(res.getRow());
+								}
+								intervalType = "diastole";
+								System.out.println(intervalType);
+								//System.out.println(res.getRow());
+							}
+							else if(intervalType == "diastole"){
+								//Statement st = Database.conn.createStatement();
+								for(int i=0; i<intervalLength; i++){
+									int id = startInterval + i;
+									int c = st.executeUpdate("UPDATE ABP_ID SET CLASS=-1 WHERE ID="+ id);
+									count = count + c;
+								}
+								intervalType = "systole";
+								System.out.println(intervalType);
+								System.out.println(res.getRow());
+							}
+							inInterval = false;
+							System.out.println(count + " rows were set");
+							
+							
+						}else if(inInterval == false){
+							startInterval = res.getRow()-625;
+							inInterval = true;
+							System.out.println("start: "+startInterval);
+							System.out.println(res.getRow());
+						}
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						System.out.println("You must define an interval type! Press 's' or 'd'.");
+						e1.printStackTrace();
+					}
+				}
+				*/
+				if(e.keyCode == SWT.CR){
+					try{
+						int intervalLength;
+						int count = 0;
+						if(intervalType == "systole"){
+							if(inInterval == false){
+								startInterval = res.getRow()-625;
+								System.out.println("start systole: "+startInterval);
+								inInterval = true;
+							}
+							else{
+								endInterval = res.getRow()-625;
+								
+								intervalLength = endInterval - startInterval;
+								
+								res.absolute(res.getRow()-625-intervalLength);
+								
+								for(int i=0; i<intervalLength; i++){
+									res.updateObject("CLASS", 1);
+									res.updateRow();
+									res.next();
+									count = i+1;
+								}
+								res.updateObject("CLASS", 1);
+								res.updateRow();
+								res.absolute(res.getRow()+625);
+								System.out.println(count +" records were turned into systole.");
+								inInterval = false;
+								intervalType = "diastole";
+								Graph.advance(res);
+								
+							}
+						}
+					
+						else if(intervalType == "diastole"){
+							if(inInterval == false){
+								startInterval = res.getRow()-625;
+								System.out.println("start diastole: "+startInterval);
+								inInterval = true;
+							}
+							else{
+								endInterval = res.getRow()-625;
+								
+								intervalLength = endInterval - startInterval;
+								
+								res.absolute(res.getRow()-625-intervalLength);
+								for(int i=0; i<intervalLength; i++){
+									res.updateObject("CLASS", -1);
+									res.updateRow();
+									res.next();
+									count = i+1;
+								}
+								res.updateObject("CLASS", -1);
+								res.updateRow();
+								res.absolute(res.getRow()+625);
+								System.out.println(count +" records were turned into diastole.");
+								inInterval = false;
+								intervalType = "systole";
+								Graph.advance(res);
+								
+							}
+						}
+					
+						else{
+							System.out.println("You must define an interval type. Press 's' or 'd'.");
+						}
+					}catch(Exception e1){
+						e1.printStackTrace();
+					}
+				}
+				
 				if(e.keyCode == SWT.ARROW_RIGHT){
 					try {
 						Graph.advance(res);
+						
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -100,6 +237,7 @@ public class MainWindow {
 				if(((e.stateMask & SWT.SHIFT) == SWT.SHIFT) && (e.keyCode == SWT.ARROW_RIGHT)){
 					try {
 						Graph.advance10(res);
+						
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -109,6 +247,7 @@ public class MainWindow {
 				if(e.keyCode == SWT.ARROW_LEFT){
 					try {
 						Graph.retreat(res, 1250);
+						
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -118,6 +257,7 @@ public class MainWindow {
 				if(((e.stateMask & SWT.SHIFT) == SWT.SHIFT) && (e.keyCode == SWT.ARROW_LEFT)){
 					try {
 						Graph.retreat10(res, 1250);
+						
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();

@@ -54,6 +54,7 @@ public class Database {
 			df.setRoundingMode(RoundingMode.HALF_UP);
 			
 		    conn = DriverManager.getConnection(connURL);
+		    conn.setAutoCommit(false);
 		    Statement s = conn.createStatement();
 		    System.out.println (" . . . . creating ABP tables in JavaDB");
 		    s.execute(createABP);
