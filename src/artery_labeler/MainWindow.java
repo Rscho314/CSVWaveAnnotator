@@ -33,6 +33,7 @@ public class MainWindow {
 	private String connURL = "jdbc:derby:memory:" + dbName + ";create=true";
 	private static String dropURL = "jdbc:derby:memory:" + dbName + ";drop=true";
 	public static Database db;
+	static Canvas graphCanvas;
 
 	/**
 	 * Launch the application.
@@ -72,7 +73,7 @@ public class MainWindow {
 	protected void createContents() throws SQLException {
 		db = new Database(connURL);
 		
-		Statement st = Database.conn.createStatement();
+		Statement st = Database.conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY);
 		ResultSet res = st.executeQuery("SELECT * FROM ABP_ID");
 		
 		display = Display.getDefault();
@@ -82,14 +83,14 @@ public class MainWindow {
 		shell.setText("Artery Data Labeler");
 		shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
-		Canvas graphCanvas = new Canvas(shell, SWT.NONE);
+		graphCanvas = new Canvas(shell, SWT.NONE);
 		graphCanvas.addKeyListener(new KeyAdapter()
 		{	
 			public void keyPressed(KeyEvent e)
 			{
 				if(e.keyCode == SWT.ARROW_RIGHT){
 					try {
-						Graph.update(res);
+						Graph.advance(res);
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
@@ -98,7 +99,25 @@ public class MainWindow {
 				
 				if(((e.stateMask & SWT.SHIFT) == SWT.SHIFT) && (e.keyCode == SWT.ARROW_RIGHT)){
 					try {
-						Graph.update10(res);
+						Graph.advance10(res);
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			
+				if(e.keyCode == SWT.ARROW_LEFT){
+					try {
+						Graph.retreat(res, 1250);
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+				
+				if(((e.stateMask & SWT.SHIFT) == SWT.SHIFT) && (e.keyCode == SWT.ARROW_LEFT)){
+					try {
+						Graph.retreat10(res, 1250);
 					} catch (SQLException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
