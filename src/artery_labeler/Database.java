@@ -21,19 +21,22 @@ import org.apache.derby.jdbc.EmbeddedDriver;
 public class Database {
 	
 	public static String path;
-	private static Connection conn;
+	static Connection conn;
     
+	// table used for data input
 	private String createABP = "CREATE TABLE ABP (" +
              "TIME INTEGER, " +
              "P DOUBLE" +
              ")";
 	
+	// table used for the graph
 	private String createABP_ID = "CREATE TABLE ABP_ID (" +
 			"ID BIGINT NOT NULL PRIMARY KEY GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1)," +
             "CLASS INTEGER, " +
 			"P DOUBLE" +
             ")";
 	
+	// table for csv export
 	private String createABP_CSV = "CREATE TABLE ABP_CSV (" +
             "CLASS INTEGER, " +
             "P_STR VARCHAR(10)" +
@@ -128,16 +131,21 @@ public class Database {
 		}
 		emptyABP.execute();
 		setTo0.execute();
+		
+		//Delete rows where P = 0 to adhere to libSVM format
+		PreparedStatement psDel = conn.prepareStatement("DELETE FROM ABP_ID WHERE P = 0");
+		psDel.executeUpdate();
 	 }
 	
 	static void exportToCSV() throws SQLException{
-		try{ 
+		try{
+			// Find P max for future scaling of the data
 			PreparedStatement ps = conn.prepareStatement("SELECT MAX(P) FROM ABP_ID");
 			ResultSet res = ps.executeQuery();
 			res.next();
 			Double pMax = res.getDouble(1);
 			
-			
+			// Copy over ABP_ID to ABP_CSV to get rid of the ID in the csv export
 			PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ABP_CSV(CLASS, P_STR) VALUES(?,?)");
 			Statement statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
 			ResultSet rs = statement.executeQuery("SELECT * FROM ABP_ID");
@@ -146,6 +154,7 @@ public class Database {
 			{  
 				Integer c = rs.getInt(2);
 				Double p = rs.getDouble(3);
+				// scaling the data & converting to #.### format
 				p = p/pMax;
 				String p_str = "1:"+ df.format(p);
 				pstmt.setInt(1, c);
@@ -153,7 +162,8 @@ public class Database {
 				pstmt.executeUpdate();
 			}
 			csvExp.execute();
-		
+			
+			// Replace unwanted characters to get libsvm format
 			File temp= new File("temp");
 			FileReader fr = new FileReader(temp);
 			String s;

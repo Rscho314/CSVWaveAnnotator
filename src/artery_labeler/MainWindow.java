@@ -1,6 +1,8 @@
 package artery_labeler;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.eclipse.draw2d.LightweightSystem;
 import org.eclipse.swt.widgets.DirectoryDialog;
@@ -16,6 +18,10 @@ import artery_labeler.Graph;
 
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 
@@ -45,8 +51,9 @@ public class MainWindow {
 
 	/**
 	 * Open the window.
+	 * @throws SQLException 
 	 */
-	public void open() {
+	public void open() throws SQLException {
 		
 		createContents();
 		shell.open();
@@ -60,9 +67,14 @@ public class MainWindow {
 
 	/**
 	 * Create contents of the window.
+	 * @throws SQLException 
 	 */
-	protected void createContents() {
+	protected void createContents() throws SQLException {
 		db = new Database(connURL);
+		
+		Statement st = Database.conn.createStatement();
+		ResultSet res = st.executeQuery("SELECT * FROM ABP_ID");
+		
 		display = Display.getDefault();
 		
 		shell = new Shell();
@@ -71,7 +83,33 @@ public class MainWindow {
 		shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
 		Canvas graphCanvas = new Canvas(shell, SWT.NONE);
+		graphCanvas.addKeyListener(new KeyAdapter()
+		{	
+			public void keyPressed(KeyEvent e)
+			{
+				if(e.keyCode == SWT.ARROW_RIGHT){
+					try {
+						Graph.update(res);
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+				
+				if(((e.stateMask & SWT.SHIFT) == SWT.SHIFT) && (e.keyCode == SWT.ARROW_RIGHT)){
+					try {
+						Graph.update10(res);
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+		});
+		  
 		final LightweightSystem arealws = new LightweightSystem(graphCanvas);
+		Graph areaFigure = new Graph();
+		arealws.setContents(areaFigure);
 		
 		Menu menu = new Menu(shell, SWT.BAR);
 		shell.setMenuBar(menu);
@@ -88,21 +126,23 @@ public class MainWindow {
 			public void widgetSelected(SelectionEvent e) {
 				FileDialog dialog = new FileDialog(shell);
                 String path = dialog.open();
-                if (path != null)
+                if (path != null){
                 	try {
                 		Database.path = path;
 						Database.createStatements();
 						Database.importCSV();
 						Database.addToABP_ID();
+						
+						Graph.init(res, 1250);
+
+						
 					} catch (SQLException e1) {
-						System.out.println(path);
 						e1.printStackTrace();
 					}
+                }
 			}
+                
 		});
 		mntmOpen.setText("Insert into database");
-		Graph areaFigure = new Graph();
-		arealws.setContents(areaFigure);
-
-	}
+	}	
 }

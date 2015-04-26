@@ -1,5 +1,8 @@
 package artery_labeler;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Calendar;
 
 import org.csstudio.swt.xygraph.dataprovider.CircularBufferDataProvider;
@@ -19,11 +22,9 @@ import artery_labeler.MainWindow;
 public class Graph extends Figure {
 	public Trace trace2;
 	public XYGraph xyGraph;
-	public Runnable updater;
-	private final CircularBufferDataProvider trace2Provider;
+	private static CircularBufferDataProvider trace2Provider;
 	public Display display = MainWindow.display;
-	private long t;
-	private int frameDelay = 30;
+	private static long t;
 	public Graph() {
 
 		Color red = display.getSystemColor(SWT.COLOR_RED);
@@ -39,15 +40,14 @@ public class Graph extends Figure {
 		xyGraph.primaryYAxis.setForegroundColor(XYGraphMediaFactory.getInstance().getColor(XYGraphMediaFactory.COLOR_RED));
 		
 		trace2Provider = new CircularBufferDataProvider(true);
-		trace2Provider.setBufferSize(100);
-		trace2Provider.setUpdateDelay(frameDelay);
+		trace2Provider.setBufferSize(1250);
 
 		trace2 = new Trace("Flow", xyGraph.primaryXAxis, xyGraph.primaryYAxis, trace2Provider);
 		trace2.setDataProvider(trace2Provider);
 		
 		trace2.setTraceColor(red);
 		trace2.setTraceType(TraceType.SOLID_LINE);
-		trace2.setLineWidth(1);
+		trace2.setLineWidth(3);
 		trace2.setBaseLine(BaseLine.NEGATIVE_INFINITY);
 		trace2.setAreaAlpha(100);
 		trace2.setAntiAliasing(true);
@@ -56,10 +56,6 @@ public class Graph extends Figure {
 		xyGraph.addTrace(trace2);
 
 		add(xyGraph);
-/*
-	Display.getCurrent().timerExec(100, updater);
-	t = Calendar.getInstance().getTimeInMillis();
-*/
 	}
 	
 	@Override
@@ -68,11 +64,41 @@ public class Graph extends Figure {
 		super.layout();
 	}
 
-	public void update() {
-			t+=40;
-			final Sample flowsample = new Sample(t, 1);
+	/**
+	 * Initiates the graph on file open with the 1250 first records
+	 */
+	public static void init(ResultSet rs, int w) {
+		try{
+			
+			
+			for(int i = 0; i < w+1; i++){
+				rs.next();
+				final Sample flowsample = new Sample(i, rs.getDouble(3));
+				trace2Provider.addSample(flowsample);
+				trace2Provider.setCurrentYDataTimestamp(rs.getInt(1)); // ticks in seconds
+			}
+			t = 1250;
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	public static void update(ResultSet rs) throws SQLException {
+			t+=1;
+			rs.next();
+			final Sample flowsample = new Sample(t, rs.getDouble(3));
 			trace2Provider.addSample(flowsample);
-			trace2Provider.setCurrentYDataTimestamp(t);
+			trace2Provider.setCurrentYDataTimestamp(rs.getInt(1));
 	};
+	
+	public static void update10(ResultSet rs) throws SQLException {
+		for(int i = 0; i<11;i++){
+			t+=1;
+			rs.next();
+			final Sample flowsample = new Sample(t, rs.getDouble(3));
+			trace2Provider.addSample(flowsample);
+			trace2Provider.setCurrentYDataTimestamp(rs.getInt(1));
+		}
+};
 
 }
