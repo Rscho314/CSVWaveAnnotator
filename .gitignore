@@ -1,0 +1,22 @@
+#Java compiled code
+*.class
+
+#python env
+.ipynb*
+env/
+
+#ressources
+*.avi
+*.mp4
+OneTriangle.java
+*.pdf
+
+#Eclipse files
+.project
+.classpath
+.metadata
+.settings/
+
+#log files
+*.log
+*.csv
