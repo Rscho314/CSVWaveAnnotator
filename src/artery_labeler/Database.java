@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -12,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
 import org.apache.derby.jdbc.EmbeddedDriver;
@@ -42,12 +44,15 @@ public class Database {
 	private static PreparedStatement setTo0;
 	private static PreparedStatement emptyABP;
 	
+	static DecimalFormat df = new DecimalFormat("#.###");
+	
 	public Database (String connURL){
 		try {
-			//SimpleDateFormat tf = new SimpleDateFormat ("HH:mm:ss MMM"); 
+			df.setRoundingMode(RoundingMode.HALF_UP);
+			
 		    conn = DriverManager.getConnection(connURL);
 		    Statement s = conn.createStatement();
-		    System.out.println (" . . . . creating ABP table in JavaDB");
+		    System.out.println (" . . . . creating ABP tables in JavaDB");
 		    s.execute(createABP);
 		    s.execute(createABP_ID);
 		    s.execute(createABP_CSV);
@@ -67,7 +72,7 @@ public class Database {
 			//csvExp.execute();
 			DriverManager.getConnection(dropURL);
 		   } catch (SQLException se)  {
-			   System.out.println(se.getSQLState());
+			   //System.out.println(se.getSQLState());
 			   if ( se.getSQLState().equals("08006") ) {
 		         gotSQLExc = true;
 		      }
@@ -127,6 +132,12 @@ public class Database {
 	
 	static void exportToCSV() throws SQLException{
 		try{ 
+			PreparedStatement ps = conn.prepareStatement("SELECT MAX(P) FROM ABP_ID");
+			ResultSet res = ps.executeQuery();
+			res.next();
+			Double pMax = res.getDouble(1);
+			
+			
 			PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ABP_CSV(CLASS, P_STR) VALUES(?,?)");
 			Statement statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
 			ResultSet rs = statement.executeQuery("SELECT * FROM ABP_ID");
@@ -135,7 +146,8 @@ public class Database {
 			{  
 				Integer c = rs.getInt(2);
 				Double p = rs.getDouble(3);
-				String p_str = "1:"+ p.toString();
+				p = p/pMax;
+				String p_str = "1:"+ df.format(p);
 				pstmt.setInt(1, c);
 				pstmt.setString(2, p_str);          
 				pstmt.executeUpdate();
