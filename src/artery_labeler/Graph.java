@@ -23,9 +23,13 @@ import artery_labeler.MainWindow;
 public class Graph extends Figure {
 	public Trace trace1;
 	public Trace trace2;
+	public Trace trace3;
+	public Trace trace4;
 	public XYGraph xyGraph;
 	private static CircularBufferDataProvider trace1Provider;
 	private static CircularBufferDataProvider trace2Provider;
+	private static CircularBufferDataProvider trace3Provider;
+	private static CircularBufferDataProvider trace4Provider;
 	public Display display = MainWindow.display;
 	private static long t;
 	public Graph() {
@@ -65,9 +69,34 @@ public class Graph extends Figure {
 		trace2.setBaseLine(BaseLine.NEGATIVE_INFINITY);
 		trace2.setAreaAlpha(100);
 		trace2.setAntiAliasing(true);
+		
+		trace3Provider = new CircularBufferDataProvider(true);
+		trace3Provider.setBufferSize(625);
+		trace3 = new Trace("systole", xyGraph.primaryXAxis, xyGraph.primaryYAxis, trace3Provider);
+		trace3.setDataProvider(trace3Provider);
+		trace3.setTraceColor(red);
+		trace3.setTraceType(TraceType.AREA);
+		trace3.setLineWidth(1);
+		trace3.setBaseLine(BaseLine.ZERO);
+		trace3.setAreaAlpha(50);
+		trace3.setAntiAliasing(true);
+		
+		trace4Provider = new CircularBufferDataProvider(true);
+		trace4Provider.setBufferSize(625);
+		trace4 = new Trace("diastole", xyGraph.primaryXAxis, xyGraph.primaryYAxis, trace4Provider);
+		trace4.setDataProvider(trace4Provider);
+		trace4.setTraceColor(green);
+		trace4.setTraceType(TraceType.AREA);
+		trace4.setLineWidth(1);
+		trace4.setBaseLine(BaseLine.ZERO);
+		trace4.setAreaAlpha(50);
+		trace4.setAntiAliasing(true);
+		
 
 		xyGraph.addTrace(trace1);
 		xyGraph.addTrace(trace2);
+		xyGraph.addTrace(trace3);
+		xyGraph.addTrace(trace4);
 
 		add(xyGraph);
 	}
@@ -99,7 +128,7 @@ public class Graph extends Figure {
 			trace1Provider.addSample(beSample);
 			final Sample beSample1 = new Sample(627, max);
 			trace1Provider.addSample(beSample1);
-			//trace1Provider.setCurrentYDataTimestamp(rs.getInt(1));
+						
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -118,6 +147,31 @@ public class Graph extends Figure {
 			final Sample beSample1 = new Sample(rs.getInt(1)-623, max);
 			trace1Provider.addSample(beSample1);
 			
+			
+			rs.absolute(rs.getRow()-1250);
+			for(int i=0; i<625; i++){
+				if(rs.getInt(2)==1){
+					final Sample areaSsample = new Sample(rs.getInt(1), rs.getDouble(3));
+					trace3Provider.addSample(areaSsample);
+					final Sample areaDsample = new Sample(rs.getInt(1), 0);
+					trace4Provider.addSample(areaDsample);
+				}
+				else if(rs.getInt(2)==-1){
+					final Sample areaSsample = new Sample(rs.getInt(1), 0);
+					trace3Provider.addSample(areaSsample);
+					final Sample areaDsample = new Sample(rs.getInt(1), rs.getDouble(3));
+					trace4Provider.addSample(areaDsample);
+				}
+				else{
+					final Sample areaSsample = new Sample(rs.getInt(1), 0);
+					trace3Provider.addSample(areaSsample);
+					final Sample areaDsample = new Sample(rs.getInt(1), 0);
+					trace4Provider.addSample(areaDsample);
+				}
+				rs.next();
+			}
+			rs.absolute(rs.getRow()+625);
+			
 	}
 	
 	public static void advance10(ResultSet rs) throws SQLException {
@@ -127,13 +181,36 @@ public class Graph extends Figure {
 			final Sample flowsample = new Sample(rs.getInt(1), rs.getDouble(3));
 			trace2Provider.addSample(flowsample);
 			trace2Provider.setCurrentYDataTimestamp(rs.getInt(1));
+
+			rs.absolute(rs.getRow()-1250);
+			for(int w=0; w<625; w++){
+				if(rs.getInt(2)==1){
+					final Sample areaSsample = new Sample(rs.getInt(1), rs.getDouble(3));
+					trace3Provider.addSample(areaSsample);
+					final Sample areaDsample = new Sample(rs.getInt(1), 0);
+					trace4Provider.addSample(areaDsample);
+				}
+				else if(rs.getInt(2)==-1){
+					final Sample areaSsample = new Sample(rs.getInt(1), 0);
+					trace3Provider.addSample(areaSsample);
+					final Sample areaDsample = new Sample(rs.getInt(1), rs.getDouble(3));
+					trace4Provider.addSample(areaDsample);
+				}
+				else{
+					final Sample areaSsample = new Sample(rs.getInt(1), 0);
+					trace3Provider.addSample(areaSsample);
+					final Sample areaDsample = new Sample(rs.getInt(1), 0);
+					trace4Provider.addSample(areaDsample);
+				}
+				rs.next();
+			}
+			rs.absolute(rs.getRow()+625);
 		}
 			Double max = trace2Provider.getYDataMinMax().getUpper();
 			final Sample beSample = new Sample(rs.getInt(1)-625, max);
 			trace1Provider.addSample(beSample);
 			final Sample beSample1 = new Sample(rs.getInt(1)-623, max);
 			trace1Provider.addSample(beSample1);
-			
 	}
 		
 		public static void retreat(ResultSet rs, int w) throws SQLException {
