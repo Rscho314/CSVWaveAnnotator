@@ -153,14 +153,19 @@ public class Database {
 		
 			while ( rs.next() )  
 			{  
-				Integer c = rs.getInt(2);
-				Double p = rs.getDouble(3);
-				// scaling the data & converting to #.### format
-				p = p/pMax;
-				String p_str = "1:"+ df.format(p);
-				pstmt.setInt(1, c);
-				pstmt.setString(2, p_str);          
-				pstmt.executeUpdate();
+				if(rs.getInt(2) == 0){
+					rs.deleteRow();
+				}
+				else{
+					Integer c = rs.getInt(2);
+					Double p = rs.getDouble(3);
+					// scaling the data & converting to #.### format
+					p = p/pMax;
+					String p_str = "1:"+ df.format(p);
+					pstmt.setInt(1, c);
+					pstmt.setString(2, p_str);          
+					pstmt.executeUpdate();
+				}
 			}
 			csvExp.execute();
 			
